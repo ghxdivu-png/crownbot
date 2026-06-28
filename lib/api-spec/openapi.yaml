@@ -1,0 +1,333 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Discord Moderation Bot API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: timeouts
+    description: Timeout management
+  - name: warnings
+    description: Warning management
+  - name: logs
+    description: Moderation logs
+  - name: config
+    description: Bot configuration
+  - name: stats
+    description: Dashboard statistics
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /timeouts:
+    get:
+      operationId: getTimeouts
+      tags: [timeouts]
+      summary: Get all active timeouts
+      parameters:
+        - name: guildId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of active timeouts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Timeout"
+
+  /timeouts/export:
+    get:
+      operationId: exportTimeouts
+      tags: [timeouts]
+      summary: Export timeouts as CSV
+      parameters:
+        - name: guildId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV data
+          content:
+            text/csv:
+              schema:
+                type: string
+
+
+  /warnings:
+    get:
+      operationId: getWarnings
+      tags: [warnings]
+      summary: Get all warnings
+      parameters:
+        - name: guildId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of warnings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warning"
+
+  /logs:
+    get:
+      operationId: getModerationLogs
+      tags: [logs]
+      summary: Get moderation logs
+      parameters:
+        - name: guildId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of moderation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModerationLog"
+
+  /stats:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard statistics
+      parameters:
+        - name: guildId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /config:
+    get:
+      operationId: getConfig
+      tags: [config]
+      summary: Get bot configuration for a guild
+      parameters:
+        - name: guildId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Guild configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildConfig"
+        "404":
+          description: Not found
+    post:
+      operationId: updateConfig
+      tags: [config]
+      summary: Update bot configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuildConfigInput"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildConfig"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Timeout:
+      type: object
+      required: [userId, guildId, username, moderatorId, moderatorTag, reason, expiresAt, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        guildId:
+          type: string
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        moderatorId:
+          type: string
+        moderatorTag:
+          type: string
+        reason:
+          type: string
+        expiresAt:
+          type: string
+        createdAt:
+          type: string
+
+    Warning:
+      type: object
+      required: [id, userId, guildId, username, moderatorId, moderatorTag, reason, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        guildId:
+          type: string
+        username:
+          type: string
+        moderatorId:
+          type: string
+        moderatorTag:
+          type: string
+        reason:
+          type: string
+        createdAt:
+          type: string
+
+    ModerationLog:
+      type: object
+      required: [id, action, userId, guildId, moderatorId, moderatorTag, reason, createdAt]
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        userId:
+          type: string
+        guildId:
+          type: string
+        username:
+          type: ["string", "null"]
+        moderatorId:
+          type: string
+        moderatorTag:
+          type: string
+        reason:
+          type: string
+        duration:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DashboardStats:
+      type: object
+      required: [totalWarnings, activeTimeouts, totalBans, totalActions, recentActions]
+      properties:
+        totalWarnings:
+          type: integer
+        activeTimeouts:
+          type: integer
+        totalBans:
+          type: integer
+        totalActions:
+          type: integer
+        recentActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModerationLog"
+        actionBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActionCount"
+
+    ActionCount:
+      type: object
+      required: [action, count]
+      properties:
+        action:
+          type: string
+        count:
+          type: integer
+
+    GuildConfig:
+      type: object
+      required: [guildId, createdAt, updatedAt]
+      properties:
+        guildId:
+          type: string
+        logChannelId:
+          type: ["string", "null"]
+        modRoleId:
+          type: ["string", "null"]
+        muteRoleId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    GuildConfigInput:
+      type: object
+      required: [guildId]
+      properties:
+        guildId:
+          type: string
+        logChannelId:
+          type: ["string", "null"]
+        modRoleId:
+          type: ["string", "null"]
+        muteRoleId:
+          type: ["string", "null"]
