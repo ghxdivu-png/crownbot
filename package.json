@@ -4,6 +4,7 @@
   "description": "Crown Bot 👑 — Premium all-in-one Discord management bot",
   "private": true,
   "type": "module",
+"packageManager": "pnpm@11.9.0",
   "scripts": {
     "dev": "node --enable-source-maps --watch ./dist/index.mjs",
     "build": "node ./build.mjs",
